@@ -45,6 +45,11 @@ a dedicated `lawyers_diary_user`, then put the connection string in
 
 ## 2. Backend setup
 
+Requires **Python 3.11–3.13**. Python 3.14 fails to build `pydantic-core`
+from source (no prebuilt wheel yet as of this writing). If `python3 --version`
+reports 3.14, install 3.11 via Homebrew first: `brew install python@3.11`,
+then use `/opt/homebrew/bin/python3.11 -m venv .venv` below instead.
+
 ```bash
 cd backend
 python3 -m venv .venv
