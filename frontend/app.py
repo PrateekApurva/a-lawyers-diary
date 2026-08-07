@@ -1,5 +1,6 @@
 from datetime import date
 
+import pandas as pd
 import streamlit as st
 
 import api_client as api
@@ -15,6 +16,7 @@ def init_state():
         "auth_mode": "login",
         "selected_case_id": None,
         "show_new_case_form": False,
+        "dark_mode": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -28,57 +30,140 @@ def logout():
     st.session_state.selected_case_id = None
 
 
+# ---------- Theme ----------
+#
+# Streamlit's own [theme] base=light config only sets the *default palette*
+# — the frontend still auto-switches to dark when the OS is in dark mode,
+# overriding it. To make "light by default, toggle for dark" actually hold
+# regardless of the visitor's OS setting, both palettes are applied as CSS
+# overrides ourselves; nothing is left to Streamlit's auto-detection.
+
+_THEME_CSS = {
+    "light": """
+        --background-color: #FFFFFF;
+        --secondary-background-color: #F0F2F6;
+        --text-color: #31333F;
+        --primary-color: #FF4B4B;
+        --border-color: #D5D6D8;
+        color-scheme: light;
+    """,
+    "dark": """
+        --background-color: #0E1117;
+        --secondary-background-color: #262730;
+        --text-color: #FAFAFA;
+        --primary-color: #FF4B4B;
+        --border-color: #41444C;
+        color-scheme: dark;
+    """,
+}
+
+
+def apply_theme(mode: str):
+    vars_css = _THEME_CSS[mode]
+    st.markdown(
+        f"""
+        <style>
+        :root, .stApp {{
+            {vars_css}
+        }}
+        html, body,
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
+        [data-testid="stMain"], [data-testid="stBottomBlockContainer"], section.main {{
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
+        }}
+        [data-testid="stHeader"] {{ background-color: rgba(0,0,0,0) !important; }}
+        [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
+        [data-testid="stCaptionContainer"] {{
+            color: var(--text-color) !important;
+        }}
+        input, textarea, select,
+        [data-baseweb="base-input"], [data-baseweb="input"], [data-baseweb="textarea"],
+        [data-baseweb="select"] > div {{
+            background-color: var(--secondary-background-color) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }}
+        [data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-secondaryFormSubmit"] {{
+            background-color: var(--secondary-background-color) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }}
+        [data-testid="stBaseButton-primary"] p, [data-testid="stBaseButton-primaryFormSubmit"] p {{
+            color: #FFFFFF !important;
+        }}
+        [data-testid="stExpander"], [data-testid="stForm"], [data-testid="stDataFrame"] {{
+            background-color: var(--secondary-background-color) !important;
+            border-color: var(--border-color) !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_theme_toggle():
+    _, toggle_col = st.columns([6, 1])
+    with toggle_col:
+        st.toggle("🌙 Dark", key="dark_mode")
+    apply_theme("dark" if st.session_state.dark_mode else "light")
+
+
 # ---------- Auth views ----------
 
 def show_login():
-    st.title("⚖️ A Lawyer's Diary")
-    st.subheader("Log in")
-    with st.form("login_form"):
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Log in", type="primary")
+    _, center, _ = st.columns([1, 1.2, 1])
+    with center:
+        st.title("⚖️ A Lawyer's Diary")
+        st.subheader("Log in")
+        with st.form("login_form"):
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Log in", type="primary")
 
-    if submitted:
-        try:
-            token_data = api.login(email, password)
-            st.session_state.token = token_data["access_token"]
-            st.session_state.advocate_email = email
-            st.session_state.view = "dashboard"
-            st.rerun()
-        except api.ApiError as e:
-            st.error(str(e))
-
-    st.caption("Don't have an account?")
-    if st.button("Create one"):
-        st.session_state.auth_mode = "signup"
-        st.rerun()
-
-
-def show_signup():
-    st.title("⚖️ A Lawyer's Diary")
-    st.subheader("Create an account")
-    with st.form("signup_form"):
-        full_name = st.text_input("Full name")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign up", type="primary")
-
-    if submitted:
-        if not full_name or not email or not password:
-            st.error("All fields are required.")
-        else:
+        if submitted:
             try:
-                api.signup(full_name, email, password)
-                st.success("Account created. Please log in.")
-                st.session_state.auth_mode = "login"
+                token_data = api.login(email, password)
+                st.session_state.token = token_data["access_token"]
+                st.session_state.advocate_email = email
+                st.session_state.view = "dashboard"
                 st.rerun()
             except api.ApiError as e:
                 st.error(str(e))
 
-    st.caption("Already have an account?")
-    if st.button("Log in instead"):
-        st.session_state.auth_mode = "login"
-        st.rerun()
+        st.caption("Don't have an account?")
+        if st.button("Create one"):
+            st.session_state.auth_mode = "signup"
+            st.rerun()
+
+
+def show_signup():
+    _, center, _ = st.columns([1, 1.2, 1])
+    with center:
+        st.title("⚖️ A Lawyer's Diary")
+        st.subheader("Create an account")
+        with st.form("signup_form"):
+            full_name = st.text_input("Full name")
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign up", type="primary")
+
+        if submitted:
+            if not full_name or not email or not password:
+                st.error("All fields are required.")
+            else:
+                try:
+                    api.signup(full_name, email, password)
+                    st.success("Account created. Please log in.")
+                    st.session_state.auth_mode = "login"
+                    st.rerun()
+                except api.ApiError as e:
+                    st.error(str(e))
+
+        st.caption("Already have an account?")
+        if st.button("Log in instead"):
+            st.session_state.auth_mode = "login"
+            st.rerun()
 
 
 # ---------- Dashboard ----------
@@ -258,7 +343,9 @@ def show_case_detail():
             }
             for h in reversed(hearings)  # most recent first
         ]
-        st.dataframe(rows, use_container_width=True, hide_index=True)
+        history_df = pd.DataFrame(rows)
+        history_df.index = range(1, len(history_df) + 1)
+        st.table(history_df)
 
         can_rollback = case["status"] == "closed" or len(hearings) > 1
         if can_rollback:
@@ -293,6 +380,7 @@ def show_case_detail():
 
 def main():
     init_state()
+    render_theme_toggle()
 
     if not st.session_state.token:
         if st.session_state.auth_mode == "signup":
