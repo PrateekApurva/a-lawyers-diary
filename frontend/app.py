@@ -1,6 +1,6 @@
+import html
 from datetime import date
 
-import pandas as pd
 import streamlit as st
 
 import api_client as api
@@ -92,9 +92,18 @@ def apply_theme(mode: str):
         [data-testid="stBaseButton-primary"] p, [data-testid="stBaseButton-primaryFormSubmit"] p {{
             color: #FFFFFF !important;
         }}
-        [data-testid="stExpander"], [data-testid="stForm"], [data-testid="stDataFrame"] {{
+        [data-testid="stExpander"], [data-testid="stForm"] {{
             background-color: var(--secondary-background-color) !important;
             border-color: var(--border-color) !important;
+        }}
+        .ald-history-table th, .ald-history-table td {{
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+        }}
+        .ald-history-table th {{
+            font-weight: 600;
         }}
         </style>
         """,
@@ -330,22 +339,34 @@ def show_case_detail():
     if not hearings:
         st.write("No hearings recorded yet.")
     else:
-        rows = [
-            {
-                "Status": "🟢 Current" if h["is_current"] else "Closed",
-                "Filing date": h["filing_date"] or "—",
-                "Court": h["court_name"],
-                "Party": h["party_name"],
-                "Stage": h["position_stage"],
-                "Previous date": h["previous_date"] or "—",
-                "Upcoming date": h["upcoming_date"] or "—",
-                "Result": h["result"] or ("Pending" if h["is_current"] else "—"),
-            }
-            for h in reversed(hearings)  # most recent first
-        ]
-        history_df = pd.DataFrame(rows)
-        history_df.index = range(1, len(history_df) + 1)
-        st.table(history_df)
+        columns = ["Status", "Filing date", "Court", "Party", "Stage", "Previous date", "Upcoming date", "Result"]
+        header_html = "".join(f"<th>{c}</th>" for c in columns)
+        body_rows = []
+        for h in reversed(hearings):  # most recent first
+            cells = [
+                "🟢 Current" if h["is_current"] else "Closed",
+                h["filing_date"] or "—",
+                h["court_name"],
+                h["party_name"],
+                h["position_stage"],
+                h["previous_date"] or "—",
+                h["upcoming_date"] or "—",
+                h["result"] or ("Pending" if h["is_current"] else "—"),
+            ]
+            cells_html = "".join(f"<td>{html.escape(str(c))}</td>" for c in cells)
+            body_rows.append(f"<tr>{cells_html}</tr>")
+
+        st.markdown(
+            f"""
+            <div style="overflow-x:auto;">
+            <table class="ald-history-table" style="width:100%; border-collapse:collapse;">
+                <thead><tr>{header_html}</tr></thead>
+                <tbody>{''.join(body_rows)}</tbody>
+            </table>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         can_rollback = case["status"] == "closed" or len(hearings) > 1
         if can_rollback:
