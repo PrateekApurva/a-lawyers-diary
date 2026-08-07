@@ -8,8 +8,9 @@ hearing for the next date, or closes the matter out entirely.
 
 ## Tech stack
 
-- **Backend:** FastAPI + SQLAlchemy, JWT auth (python-jose + passlib/bcrypt)
-- **Frontend:** Streamlit
+- **Backend:** FastAPI + SQLAlchemy, JWT auth (python-jose + bcrypt), Alembic migrations
+- **Frontend:** React + TypeScript (Vite, Tailwind CSS, React Router) — the primary frontend.
+  A Streamlit frontend also exists (`streamlit-frontend/`), kept for quick internal use.
 - **Database:** PostgreSQL
 
 ## Project layout
@@ -31,6 +32,15 @@ backend/
   alembic/            Migration environment (see "Database migrations" below)
   seed_demo.py        Re-runnable script that creates a demo account + sample cases
   requirements.txt
+  .env.example
+react-frontend/
+  src/
+    main.tsx           Entry point: router + Theme/Auth providers
+    App.tsx              Route definitions
+    api/client.ts          Thin fetch wrapper for the backend API
+    context/                AuthContext (JWT in localStorage), ThemeContext (light/dark)
+    components/               Shared UI: forms, tables, TopBar, ui/ primitives
+    pages/                     LoginPage, SignupPage, DashboardPage, CaseDetailPage
   .env.example
 streamlit-frontend/
   app.py              Streamlit UI (login/signup, dashboard, case detail)
@@ -100,9 +110,28 @@ alembic upgrade head
 
 To roll back the most recent migration: `alembic downgrade -1`.
 
-## 4. Streamlit frontend setup
+## 4. React frontend setup (primary)
 
-In a second terminal:
+Requires Node.js 20+. In a second terminal:
+
+```bash
+cd react-frontend
+npm install
+
+cp .env.example .env
+# edit .env if your API isn't on localhost:8000
+
+npm run dev
+```
+
+Open the URL Vite prints (typically `http://localhost:5173`). `npm run build`
+produces a static `dist/` folder for deployment (e.g. Vercel, Netlify,
+Cloudflare Pages).
+
+## 5. Streamlit frontend setup (optional, secondary)
+
+Kept around for quick internal use — same backend, same data, simpler to run
+without Node. In a second (or third) terminal:
 
 ```bash
 cd streamlit-frontend
@@ -122,8 +151,13 @@ Open the URL Streamlit prints (typically `http://localhost:8501`).
 
 - Set real, secret values for `SECRET_KEY` and `DATABASE_URL` via your
   hosting platform's environment variable configuration — never commit `.env`.
-- `CORS_ALLOW_ORIGINS` in the backend `.env` must include the deployed
-  frontend's URL(s).
+- `CORS_ALLOW_ORIGINS` in the backend `.env` must include every deployed
+  frontend URL you actually use (React's, and Streamlit's if you keep it live).
 - The deploy start command should run migrations before starting the server,
   e.g. `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
   (already set up this way in `render.yaml`).
+- The React frontend is a static build (`npm run build` → `dist/`), so it
+  deploys differently than Streamlit did — a static host (Vercel, Netlify,
+  Cloudflare Pages) rather than Streamlit Community Cloud. Set
+  `VITE_API_BASE_URL` as a build-time environment variable on whichever
+  platform you pick.
