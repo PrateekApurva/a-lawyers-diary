@@ -244,14 +244,49 @@ def show_case_detail():
     st.subheader("Hearing history")
     if not hearings:
         st.write("No hearings recorded yet.")
-    for h in reversed(hearings):
-        label = f"{h['filing_date'] or '—'} → {h['upcoming_date'] or '—'}  ({h['position_stage']})"
-        with st.expander(label, expanded=h["is_current"]):
-            st.write(f"**Court:** {h['court_name']}")
-            st.write(f"**Party:** {h['party_name']}")
-            st.write(f"**Previous date:** {h['previous_date'] or '—'}")
-            st.write(f"**Upcoming date:** {h['upcoming_date'] or '—'}")
-            st.write(f"**Result:** {h['result'] or ('Pending' if h['is_current'] else '—')}")
+    else:
+        rows = [
+            {
+                "Status": "🟢 Current" if h["is_current"] else "Closed",
+                "Filing date": h["filing_date"] or "—",
+                "Court": h["court_name"],
+                "Party": h["party_name"],
+                "Stage": h["position_stage"],
+                "Previous date": h["previous_date"] or "—",
+                "Upcoming date": h["upcoming_date"] or "—",
+                "Result": h["result"] or ("Pending" if h["is_current"] else "—"),
+            }
+            for h in reversed(hearings)  # most recent first
+        ]
+        st.dataframe(rows, use_container_width=True, hide_index=True)
+
+        can_rollback = case["status"] == "closed" or len(hearings) > 1
+        if can_rollback:
+            st.caption("Made a mistake on the most recent update?")
+            if st.button("↩️ Undo last hearing update"):
+                try:
+                    api.rollback_hearing(case_id)
+                    st.success("Last update undone.")
+                    st.rerun()
+                except api.ApiError as e:
+                    st.error(str(e))
+
+    st.divider()
+    with st.expander("⚠️ Danger zone"):
+        st.write(
+            f"Deleting **{case['name']} ({case['case_id']})** permanently removes it "
+            "and its entire hearing history. This cannot be undone."
+        )
+        confirm = st.checkbox("I understand, delete this case permanently", key="confirm_delete_case")
+        if st.button("🗑️ Delete case", disabled=not confirm, type="primary"):
+            try:
+                api.delete_case(case_id)
+                st.session_state.view = "dashboard"
+                st.session_state.selected_case_id = None
+                st.success("Case deleted.")
+                st.rerun()
+            except api.ApiError as e:
+                st.error(str(e))
 
 
 # ---------- Router ----------

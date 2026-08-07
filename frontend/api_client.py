@@ -82,3 +82,12 @@ def update_hearing(case_id: int, payload: dict) -> dict:
         timeout=10,
     )
     return _handle(resp)
+
+
+def rollback_hearing(case_id: int) -> dict:
+    resp = requests.post(
+        f"{API_BASE_URL}/cases/{case_id}/hearings/rollback",
+        headers=_headers(),
+        timeout=10,
+    )
+    return _handle(resp)

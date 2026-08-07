@@ -137,3 +137,36 @@ def record_hearing_result(
     db.commit()
     db.refresh(case)
     return case
+
+
+def rollback_last_hearing(db: Session, case: models.Case) -> models.Case:
+    """
+    Undoes the most recent hearing update. If the matter was closed, reopens
+    the hearing that closed it. Otherwise deletes the current (open) hearing
+    row and reopens the one before it — the mirror image of whichever branch
+    of record_hearing_result last ran.
+    """
+    hearings = case.hearings
+    if not hearings:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This case has no hearings")
+
+    latest = hearings[-1]
+
+    if case.status == models.CaseStatus.CLOSED:
+        latest.is_current = True
+        latest.result = None
+        case.status = models.CaseStatus.ACTIVE
+    else:
+        if len(hearings) == 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nothing to roll back — no hearing update has been recorded yet",
+            )
+        previous = hearings[-2]
+        db.delete(latest)
+        previous.is_current = True
+        previous.result = None
+
+    db.commit()
+    db.refresh(case)
+    return case

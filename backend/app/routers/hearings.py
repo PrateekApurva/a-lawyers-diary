@@ -27,3 +27,13 @@ def update_hearing(
 ):
     case = crud.get_case(db, case_id, advocate.id)
     return crud.record_hearing_result(db, case, payload)
+
+
+@router.post("/rollback", response_model=schemas.CaseDetail)
+def rollback_hearing(
+    case_id: int,
+    db: Session = Depends(get_db),
+    advocate: models.Advocate = Depends(get_current_advocate),
+):
+    case = crud.get_case(db, case_id, advocate.id)
+    return crud.rollback_last_hearing(db, case)
