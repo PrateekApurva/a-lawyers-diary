@@ -18,8 +18,8 @@ export default function ThemeToggle() {
         }`}
       >
         <span
-          className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
-            isDark ? "translate-x-4" : "translate-x-0.5"
+          className={`absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
+            isDark ? "translate-x-4" : "translate-x-0"
           }`}
         />
       </span>
