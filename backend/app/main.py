@@ -1,22 +1,12 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.database import Base, engine
 from app.routers import auth, cases, hearings
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Creates tables if they don't exist yet. For schema changes after the
-    # first deploy, switch to Alembic migrations instead of relying on this.
-    Base.metadata.create_all(bind=engine)
-    yield
-
-
-app = FastAPI(title="A Lawyer's Diary API", lifespan=lifespan)
+# Schema is managed by Alembic (see backend/alembic/), not created here.
+# Run `alembic upgrade head` before starting the app.
+app = FastAPI(title="A Lawyer's Diary API")
 
 app.add_middleware(
     CORSMiddleware,

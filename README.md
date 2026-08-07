@@ -28,9 +28,11 @@ backend/
       auth.py               /auth/signup, /auth/login
       cases.py               /cases CRUD
       hearings.py             /cases/{id}/hearings, /cases/{id}/hearings/update
+  alembic/            Migration environment (see "Database migrations" below)
+  seed_demo.py        Re-runnable script that creates a demo account + sample cases
   requirements.txt
   .env.example
-frontend/
+streamlit-frontend/
   app.py              Streamlit UI (login/signup, dashboard, case detail)
   api_client.py         Thin HTTP client for the backend API
   requirements.txt
@@ -60,18 +62,50 @@ cp .env.example .env
 # edit .env: set DATABASE_URL to match the DB you created, and SECRET_KEY
 # (generate one with: openssl rand -hex 32)
 
+alembic upgrade head    # creates all tables via migrations
 uvicorn app.main:app --reload
 ```
 
 The API will be live at `http://localhost:8000`. Interactive docs at
-`http://localhost:8000/docs`. Tables are created automatically on startup.
+`http://localhost:8000/docs`.
 
-## 3. Frontend setup
+Optionally, populate some sample data to explore:
+
+```bash
+python seed_demo.py
+```
+
+This creates a demo advocate (`demo@lawyersdiary.com` / `Demo@1234`) with 4
+sample cases covering different states (fresh filing, adjournment history,
+closed matter, upcoming hearing). Safe to re-run — it resets only that
+account's data.
+
+## 3. Database migrations
+
+Schema is managed entirely through Alembic — there's no `create_all()` in
+the app. Whenever you change a model in `app/models.py`:
+
+```bash
+cd backend
+alembic revision --autogenerate -m "describe the change"
+```
+
+Then open the generated file in `alembic/versions/` and check it actually
+matches what you intended (autogenerate is good but not infallible —
+especially for column renames, which it sees as a drop + add). Apply it:
+
+```bash
+alembic upgrade head
+```
+
+To roll back the most recent migration: `alembic downgrade -1`.
+
+## 4. Streamlit frontend setup
 
 In a second terminal:
 
 ```bash
-cd frontend
+cd streamlit-frontend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -89,7 +123,7 @@ Open the URL Streamlit prints (typically `http://localhost:8501`).
 - Set real, secret values for `SECRET_KEY` and `DATABASE_URL` via your
   hosting platform's environment variable configuration — never commit `.env`.
 - `CORS_ALLOW_ORIGINS` in the backend `.env` must include the deployed
-  frontend's URL.
-- The backend currently creates tables via `Base.metadata.create_all` on
-  startup. Once the schema is deployed once, introduce Alembic migrations
-  for any future schema changes instead of relying on this.
+  frontend's URL(s).
+- The deploy start command should run migrations before starting the server,
+  e.g. `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+  (already set up this way in `render.yaml`).
