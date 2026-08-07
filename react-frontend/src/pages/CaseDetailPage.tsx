@@ -6,8 +6,29 @@ import type { CaseDetail } from "../types";
 import TopBar from "../components/TopBar";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import RecordHearingForm from "../components/RecordHearingForm";
 import HearingHistoryTable from "../components/HearingHistoryTable";
+
+function TrashIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+      />
+    </svg>
+  );
+}
 
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +39,7 @@ export default function CaseDetailPage() {
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [rollingBack, setRollingBack] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -66,6 +87,7 @@ export default function CaseDetailPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete case.");
       setDeleting(false);
+      setShowDeleteDialog(false);
     }
   }
 
@@ -96,10 +118,19 @@ export default function CaseDetailPage() {
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-6 sm:px-6">
       <TopBar />
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Button variant="secondary" onClick={() => navigate("/")}>
           ← Back
         </Button>
+        <button
+          type="button"
+          onClick={() => setShowDeleteDialog(true)}
+          aria-label="Delete case"
+          title="Delete case"
+          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+        >
+          <TrashIcon />
+        </button>
       </div>
 
       <h1 className="mb-2 text-2xl font-bold break-words">
@@ -162,29 +193,17 @@ export default function CaseDetailPage() {
         </div>
       )}
 
-      <details className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-        <summary className="cursor-pointer font-medium text-amber-800 dark:text-amber-300">
-          ⚠️ Danger zone
-        </summary>
-        <div className="mt-3 space-y-3">
-          <p className="text-sm text-amber-900 dark:text-amber-200">
-            Deleting <strong>{caseDetail.name} ({caseDetail.case_id})</strong> permanently removes
-            it and its entire hearing history. This cannot be undone.
-          </p>
-          <label className="flex items-center gap-2 text-sm text-amber-900 dark:text-amber-200">
-            <input
-              type="checkbox"
-              checked={confirmDelete}
-              onChange={(e) => setConfirmDelete(e.target.checked)}
-              className="h-4 w-4 rounded border-amber-400 text-red-600 focus:ring-red-500"
-            />
-            I understand, delete this case permanently
-          </label>
-          <Button variant="danger" disabled={!confirmDelete || deleting} onClick={handleDelete}>
-            {deleting ? "Deleting…" : "🗑️ Delete case"}
-          </Button>
-        </div>
-      </details>
+      {showDeleteDialog && (
+        <ConfirmDialog
+          title="Delete this case?"
+          message={`"${caseDetail.name} (${caseDetail.case_id})" and its entire hearing history will be permanently deleted. This cannot be undone.`}
+          confirmLabel="Delete case"
+          busyLabel="Deleting…"
+          busy={deleting}
+          onCancel={() => setShowDeleteDialog(false)}
+          onConfirm={handleDelete}
+        />
+      )}
     </div>
   );
 }
