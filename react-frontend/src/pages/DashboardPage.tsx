@@ -127,13 +127,11 @@ export default function DashboardPage() {
                   onClick={() => navigate(`/cases/${c.id}`)}
                   className="cursor-pointer border-b border-slate-100 transition last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
                 >
-                  <td className="max-w-[110px] truncate px-1.5 py-3 whitespace-nowrap sm:max-w-none sm:px-4">
+                  <td className="max-w-[110px] px-1.5 py-3 break-words sm:max-w-none sm:px-4 sm:whitespace-nowrap">
                     {c.case_id}
                   </td>
-                  <td className="max-w-[140px] px-1.5 py-3 sm:max-w-none sm:px-4">
-                    <span className="block truncate" title={c.name}>
-                      {c.name}
-                    </span>
+                  <td className="max-w-[140px] px-1.5 py-3 break-words sm:max-w-none sm:px-4">
+                    {c.name}
                   </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
                     {c.current_hearing?.court_name ?? "—"}
