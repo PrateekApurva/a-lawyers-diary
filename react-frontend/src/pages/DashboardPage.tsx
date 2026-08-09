@@ -117,19 +117,20 @@ export default function DashboardPage() {
                 <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
                   Status
                 </th>
-                <th className="px-1.5 py-3 text-right font-semibold text-slate-700 sm:px-4 dark:text-slate-200" />
+                <th className="hidden px-4 py-3 text-right font-semibold text-slate-700 sm:table-cell dark:text-slate-200" />
               </tr>
             </thead>
             <tbody>
               {sortCases(cases).map((c) => (
                 <tr
                   key={c.id}
-                  className="border-b border-slate-100 last:border-0 dark:border-slate-800"
+                  onClick={() => navigate(`/cases/${c.id}`)}
+                  className="cursor-pointer border-b border-slate-100 transition last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
                 >
-                  <td className="max-w-[76px] truncate px-1.5 py-3 whitespace-nowrap sm:max-w-none sm:px-4">
+                  <td className="max-w-[110px] truncate px-1.5 py-3 whitespace-nowrap sm:max-w-none sm:px-4">
                     {c.case_id}
                   </td>
-                  <td className="max-w-[68px] px-1.5 py-3 sm:max-w-none sm:px-4">
+                  <td className="max-w-[140px] px-1.5 py-3 sm:max-w-none sm:px-4">
                     <span className="block truncate" title={c.name}>
                       {c.name}
                     </span>
@@ -154,8 +155,14 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-1.5 py-3 text-right sm:px-4">
-                    <Button variant="secondary" onClick={() => navigate(`/cases/${c.id}`)}>
+                  <td className="hidden text-right sm:table-cell sm:px-4 sm:py-3">
+                    <Button
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/cases/${c.id}`);
+                      }}
+                    >
                       Open
                     </Button>
                   </td>
