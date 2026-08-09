@@ -8,6 +8,40 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import NewCaseForm from "../components/NewCaseForm";
 
+function KebabIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  );
+}
+
+// Open cases first, soonest upcoming date at the top (no date sorts to the
+// end of the active group); closed cases always come after all active ones.
+function sortCases(cases: CaseListItem[]): CaseListItem[] {
+  const active = cases.filter((c) => c.status === "active");
+  const closed = cases.filter((c) => c.status === "closed");
+
+  active.sort((a, b) => {
+    const aDate = a.current_hearing?.upcoming_date;
+    const bDate = b.current_hearing?.upcoming_date;
+    if (!aDate && !bDate) return 0;
+    if (!aDate) return 1;
+    if (!bDate) return -1;
+    return aDate.localeCompare(bDate);
+  });
+
+  return [...active, ...closed];
+}
+
 export default function DashboardPage() {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
@@ -80,30 +114,42 @@ export default function DashboardPage() {
 
       {cases !== null && cases.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+          <table className="w-full border-collapse text-left text-sm sm:min-w-[720px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
-                {["Case ID", "Name", "Court", "Previous date", "Upcoming date", "Status", ""].map(
-                  (h) => (
-                    <th key={h} className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
-                      {h}
-                    </th>
-                  ),
-                )}
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Case ID</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Name</th>
+                <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
+                  Court
+                </th>
+                <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
+                  Previous date
+                </th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
+                  Upcoming date
+                </th>
+                <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
+                  Status
+                </th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200" />
               </tr>
             </thead>
             <tbody>
-              {cases.map((c) => (
+              {sortCases(cases).map((c) => (
                 <tr
                   key={c.id}
                   className="border-b border-slate-100 last:border-0 dark:border-slate-800"
                 >
                   <td className="px-4 py-3">{c.case_id}</td>
                   <td className="px-4 py-3">{c.name}</td>
-                  <td className="px-4 py-3">{c.current_hearing?.court_name ?? "—"}</td>
-                  <td className="px-4 py-3">{c.current_hearing?.previous_date ?? "—"}</td>
+                  <td className="hidden px-4 py-3 sm:table-cell">
+                    {c.current_hearing?.court_name ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 sm:table-cell">
+                    {c.current_hearing?.previous_date ?? "—"}
+                  </td>
                   <td className="px-4 py-3">{c.current_hearing?.upcoming_date ?? "—"}</td>
-                  <td className="px-4 py-3">
+                  <td className="hidden px-4 py-3 sm:table-cell">
                     {c.status === "active" ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" /> Active
@@ -115,7 +161,19 @@ export default function DashboardPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <Button variant="secondary" onClick={() => navigate(`/cases/${c.id}`)}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/cases/${c.id}`)}
+                      aria-label={`Open ${c.name}`}
+                      className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 sm:hidden dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+                    >
+                      <KebabIcon />
+                    </button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => navigate(`/cases/${c.id}`)}
+                      className="hidden sm:inline-flex"
+                    >
                       Open
                     </Button>
                   </td>
