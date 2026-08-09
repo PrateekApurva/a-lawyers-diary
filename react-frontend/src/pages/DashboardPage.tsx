@@ -8,22 +8,6 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import NewCaseForm from "../components/NewCaseForm";
 
-function KebabIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="5" r="1.8" />
-      <circle cx="12" cy="12" r="1.8" />
-      <circle cx="12" cy="19" r="1.8" />
-    </svg>
-  );
-}
-
 // Open cases first, soonest upcoming date at the top (no date sorts to the
 // end of the active group); closed cases always come after all active ones.
 function sortCases(cases: CaseListItem[]): CaseListItem[] {
@@ -131,7 +115,7 @@ export default function DashboardPage() {
                 <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
                   Status
                 </th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200" />
+                <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-200" />
               </tr>
             </thead>
             <tbody>
@@ -160,20 +144,8 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/cases/${c.id}`)}
-                      aria-label={`Open ${c.name}`}
-                      className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 sm:hidden dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-                    >
-                      <KebabIcon />
-                    </button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => navigate(`/cases/${c.id}`)}
-                      className="hidden sm:inline-flex"
-                    >
+                  <td className="px-4 py-3 text-right">
+                    <Button variant="secondary" onClick={() => navigate(`/cases/${c.id}`)}>
                       Open
                     </Button>
                   </td>
