@@ -98,24 +98,26 @@ export default function DashboardPage() {
 
       {cases !== null && cases.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="w-full border-collapse text-left text-sm sm:min-w-[720px]">
+          <table className="w-full border-collapse text-left text-xs sm:min-w-[720px] sm:text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Case ID</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Name</th>
+                <th className="whitespace-nowrap px-1.5 py-3 font-semibold text-slate-700 sm:px-4 dark:text-slate-200">
+                  Case ID
+                </th>
+                <th className="px-1.5 py-3 font-semibold text-slate-700 sm:px-4 dark:text-slate-200">Name</th>
                 <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
                   Court
                 </th>
                 <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
                   Previous date
                 </th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap px-1.5 py-3 font-semibold text-slate-700 sm:px-4 dark:text-slate-200">
                   Upcoming date
                 </th>
                 <th className="hidden px-4 py-3 font-semibold text-slate-700 sm:table-cell dark:text-slate-200">
                   Status
                 </th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-200" />
+                <th className="px-1.5 py-3 text-right font-semibold text-slate-700 sm:px-4 dark:text-slate-200" />
               </tr>
             </thead>
             <tbody>
@@ -124,15 +126,23 @@ export default function DashboardPage() {
                   key={c.id}
                   className="border-b border-slate-100 last:border-0 dark:border-slate-800"
                 >
-                  <td className="px-4 py-3">{c.case_id}</td>
-                  <td className="px-4 py-3">{c.name}</td>
+                  <td className="max-w-[76px] truncate px-1.5 py-3 whitespace-nowrap sm:max-w-none sm:px-4">
+                    {c.case_id}
+                  </td>
+                  <td className="max-w-[68px] px-1.5 py-3 sm:max-w-none sm:px-4">
+                    <span className="block truncate" title={c.name}>
+                      {c.name}
+                    </span>
+                  </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
                     {c.current_hearing?.court_name ?? "—"}
                   </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
                     {c.current_hearing?.previous_date ?? "—"}
                   </td>
-                  <td className="px-4 py-3">{c.current_hearing?.upcoming_date ?? "—"}</td>
+                  <td className="whitespace-nowrap px-1.5 py-3 sm:px-4">
+                    {c.current_hearing?.upcoming_date ?? "—"}
+                  </td>
                   <td className="hidden px-4 py-3 sm:table-cell">
                     {c.status === "active" ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
@@ -144,7 +154,7 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-1.5 py-3 text-right sm:px-4">
                     <Button variant="secondary" onClick={() => navigate(`/cases/${c.id}`)}>
                       Open
                     </Button>
